@@ -1,5 +1,5 @@
 from random import randint, random
-
+from math import pow
 def del_dub(l):
     """
     Удаляет дубликаты из списка
@@ -28,11 +28,12 @@ def randomize_list(l):
     return new_l
 
 class World():
-    def __init__(self, vertexes=[], edges=[]):
+    def __init__(self, vertexes=[], edges=[], gamma=1):
         # vertexes - вершины, заданные в виде
         self.vertexes = vertexes
         self.edges = edges
         self.country_list = list()
+        self.gamma = gamma
 
     def show_graph(self):
         for i in self.country_list:
@@ -110,7 +111,55 @@ class World():
         return your_country
 
     def generate_queue(self):
-        self.queue = randomize_list(self.country_list)
+        return randomize_list(self.country_list)
+
+    def play(self, country):
+        gamma = self.gamma
+        """
+        Создаётся список действий с весом, далее выбирается действие с максимальным весом,
+        проверяется является ли данное действие выгодным, если да, то всё хорошо, мы его исполняем, если нет, то пас  
+        """
+
+        wealth = country.get_wealth()
+        action_list = list()
+        for neigh in country.get_neighbors():
+            n_wealth = neigh.get_wealth()
+            action_wealth = (wealth + n_wealth) * pow(wealth,gamma) / (pow(wealth,gamma) + pow(n_wealth,gamma))
+            action_list.append((neigh, action_wealth))
+        # Выбираем лучшее действи
+        best = (1, 0)
+        for action in action_list:
+            if best[1] < action[1]:
+                best = action
+        # Проверяем выгодно ли оно и атакуем
+        if best[1] > wealth:
+            loser = self.attack(country, neigh)
+            return loser
+        return None
+
+
+
+
+    def attack(self, at_country, def_country):
+        """
+        функция возвращает проигравшего для его последующего удаления
+        :param at_country:
+        :param def_country:
+        :return:
+        """
+        p = random()
+        gamma = self.gamma
+        at_wealth = at_country.get_wealth()
+        def_wealth = def_country.get_wealth()
+        attack_p = pow(at_wealth,gamma) / (pow(at_wealth,gamma) + pow(def_wealth,gamma))
+        if attack_p > p:
+            self.conquest(at_country, def_country)
+            return def_country
+        else:
+            self.conquest(def_country, at_country)
+            return at_country
+
+
 
     def zeroize(self):
         self.vertexes = list()
@@ -222,6 +271,4 @@ class Country():
 my_w.generate_vertexes()
 my_w.generate_countries()
 my_w.show_graph()"""
-
-
 

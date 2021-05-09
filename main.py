@@ -14,6 +14,7 @@ from kivy.core.window import Window
 from kivy.uix.image import Image
 from kivy.uix.treeview import TreeView
 from kivy.graphics import Color, Ellipse, Bezier, Line
+from functools import partial
 
 Builder.load_file("base.kv")
 
@@ -68,6 +69,7 @@ class MainScreen(Screen):
         #self.gen_map()
         self.edges = list()
         self.countries = list()
+        self.player = None
 
     def gen_env(self):
         width, height = Window.size
@@ -94,24 +96,55 @@ class MainScreen(Screen):
 
         # Генерация карты вершин
         self.generate_map = Button(
-            size_hint=(None, None),
-            width=100,
-            height=30,
-            font_size=14,
-            text='Генерировать',
-            pos=(310, height - 30)
+                                size_hint=(None, None),
+                                width=100,
+                                height=30,
+                                font_size=14,
+                                text='Генерировать',
+                                pos=(310, height - 30)
         )
         self.generate_map.bind(on_release=self.gen_map)
         self.add_widget(self.generate_map)
 
-        # Заголовок
-        self.text2 = BlackLabel(size_hint=(None, None),
+        #gamma
+        self.gamma_text = BlackLabel(size_hint=(None, None),
                                 width=100,
                                 height=30,
                                 font_size=14,
+                                pos=(450, height - 30))
+        self.gamma_text.text = 'Введите гамма'
+        self.add_widget(self.gamma_text)
+
+        # Окно ввода гаммы
+        self.input_gamma = TextInput(multiline=False,
+                                size_hint=(None, None),
+                                width=100,
+                                height=30,
+                                font_size=14,
+                                pos=(550, height - 30),
+                                text='2')
+        # on_text_validate=print)
+        self.add_widget(self.input_gamma)
+
+        # ввод гаммы
+        self.gamma_button = Button(size_hint=(None, None),
+                                  width=130,
+                                  height=30,
+                                  font_size=14,
+                                  text='Изменить гамма',
+                                  pos=(550, height - 70))
+        self.gamma_button.bind(on_release=self.change_gamma)
+        self.add_widget(self.gamma_button)
+
+        # Заголовок
+        self.play_button= Button(size_hint=(None, None),
+                                width=100,
+                                height=30,
+                                font_size=14,
+                                text='Играть за',
                                 pos=(50, height - 70))
-        self.text2.text = 'Играть за'
-        self.add_widget(self.text2)
+        self.play_button.bind(on_release=self.add_player)
+        self.add_widget(self.play_button)
 
         # Окно выбора игрока
         self.dropdown_1 = DropDown()
@@ -128,7 +161,18 @@ class MainScreen(Screen):
         # self.dropdown.bind(on_select=lambda instance, x: setattr(self.search, 'text', x))
         self.add_widget(self.country_change)
 
-        # Заголовок
+        self.model_game_btn = Button(
+            size_hint=(None, None),
+            width=100,
+            height=30,
+            font_size=14,
+            text='Играть раунд',
+            pos=(310, height - 70)
+        )
+        self.model_game_btn.bind(on_release=partial(self.model_game, 0))
+        self.add_widget(self.model_game_btn)
+
+        # Кнопка атаки
         self.attack = Button(size_hint=(None, None),
                              width=100,
                              height=30,
@@ -153,7 +197,23 @@ class MainScreen(Screen):
         # self.dropdown.bind(on_select=lambda instance, x: setattr(self.search, 'text', x))
         self.add_widget(self.attack_country)
 
+        # Кнопка паса
+        self.passs = Button(size_hint=(None, None),
+                             width=100,
+                             height=30,
+                             font_size=14,
+                             text='Пасовать',
+                             pos=(50, height - 150))
+        self.passs.bind(on_release=self.pass_round)
+        self.add_widget(self.passs)
+
+    def change_gamma(self, *args):
+        global my_w
+        my_w.gamma = float(self.input_gamma.text)
+
     def update_dropdown_1(self, struct):
+        if self.player:
+            return -1
         global my_w
         self.dropdown_1.dismiss()
         self.dropdown_1=DropDown()
@@ -191,14 +251,50 @@ class MainScreen(Screen):
 
     def country_conquest(self, *args):
         global my_w
-        winner_number = int(self.country_change.text)
-        loser_number = int(self.attack_country.text)
-        if winner_number!='' and loser_number!='':
-            winner = my_w.search_country_by_number(winner_number)
-            loser = my_w.search_country_by_number(loser_number)
-            my_w.conquest(winner, loser)
+        at_number = int(self.country_change.text)
+        def_number = int(self.attack_country.text)
+        if at_number!='' and def_number!='':
+            att = my_w.search_country_by_number(at_number)
+            deff = my_w.search_country_by_number(def_number)
+            my_w.attack(att, deff)
             self.attack_country.text=''
             self.update_map()
+        self.model_game(flag=1)
+
+    def pass_round(self, *args):
+        self.model_game(flag=1)
+
+    def model_game(self, flag=0, *args):
+        global my_w
+        #создаём очередь
+        if flag==0:
+            self.queue = my_w.generate_queue()
+            self.i = 0
+        while self.i < len(self.queue):
+            play_country = self.queue[self.i]
+            if self.player == play_country:
+                self.update_map()
+                break
+
+            loser = my_w.play(play_country)
+            # создаём новую очередь, если что-то делаем
+            if loser:
+                new_queue = list()
+                for country in self.queue:
+                    if country != loser:
+                        new_queue.append(country)
+                self.queue = new_queue
+            # проверяем сместилась ли она так, что элемент с текущим номером стал другим, если да, то ничего не делаем,
+            # если нет, то i++
+            if self.i < len(self.queue):
+                if play_country == self.queue[self.i]:
+                    self.i += 1
+
+        self.update_map()
+
+    def add_player(self, *args):
+        if self.country_change.text !='':
+            self.player = self.country_change.text
 
     def gen_map(self, *args):
         global my_w
@@ -258,6 +354,6 @@ class MainApp(App):
 if __name__ == '__main__':
     global mapp, my_w
 
-    my_w = World()
+    my_w = World(gamma=2)
     mapp = MainApp()
     mapp.run()
