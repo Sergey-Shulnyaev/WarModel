@@ -240,6 +240,7 @@ class MainScreen(Screen):
                                   size=(defalt_size, defalt_size))
                 self.countries.append(cb)
                 self.add_widget(cb)
+
 class MainApp(App):
 
     def build(self):

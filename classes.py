@@ -17,6 +17,16 @@ def del_dub(l):
             new_l.append(i)
     return new_l
 
+def randomize_list(l):
+    length = len(l)
+    new_l = l.copy()
+    for i in range(length):
+        j = randint(i, length-1)
+        a = new_l[i]
+        new_l[i] = new_l[j]
+        new_l[j] = a
+    return new_l
+
 class World():
     def __init__(self, vertexes=[], edges=[]):
         # vertexes - вершины, заданные в виде
@@ -92,13 +102,15 @@ class World():
             country.create_neighbor_vertexes()
             country.create_neighbors()
 
-
     def search_country_by_number(self, number):
         for country in self.country_list:
             if number == country.get_number():
                 your_country = country
                 break
         return your_country
+
+    def generate_queue(self):
+        self.queue = randomize_list(self.country_list)
 
     def zeroize(self):
         self.vertexes = list()
