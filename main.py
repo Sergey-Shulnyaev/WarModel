@@ -39,23 +39,24 @@ class CircleButton(Button):
         self.bind(on_press=self.press_color)
         self.bind(on_release=self.release_color)
 
-        self.canvas.clear()
-        with self.canvas:
+        #self.canvas.clear()
+        self.background_color = (0,0,0,0)
+        with self.canvas.before:
             Color(rgb=(0, 0, 0))
             Ellipse(pos=self.ellipse_pos, size=self.ellipse_size)
 
 
 
     def press_color(self, mes):
-        self.canvas.clear()
-        with self.canvas:
-            Color(rgb=(0, 255, 0))
+        self.canvas.before.clear()
+        with self.canvas.before:
+            Color(rgba=(0, 255, 0, 1))
             Ellipse(pos=self.ellipse_pos, size=self.ellipse_size)
 
     def release_color(self, mes):
-        self.canvas.clear()
-        with self.canvas:
-            Color(rgb=(0, 0, 0))
+        self.canvas.before.clear()
+        with self.canvas.before:
+            Color(rgba=(0, 0, 0, 1))
             Ellipse(pos=self.ellipse_pos, size=self.ellipse_size)
 
 
@@ -179,7 +180,8 @@ class GameScreen(MainScreen):
     """
     def __init__(self, *args, **kwargs):
         super(GameScreen, self).__init__(*args, **kwargs)
-        self.s1 = CircleButton()
+        self.s1 = CircleButton(text="jenkins", color=(0,0,0), font_size=32)
+
         self.add_widget(self.s1)
 
 
