@@ -1,4 +1,4 @@
-from random import randint
+from random import randint, random
 
 def del_dub(l):
     """
@@ -26,20 +26,25 @@ class World():
 
     def show_graph(self):
         for i in self.country_list:
-            print(i.get_number(), i.color)
+            print(i.get_number(), i.get_neighbors())
 
     def generate_vertexes(self, quantity=10, min_w=1, max_w=10):
         for i in range(quantity):
             # генерация вершины
-            v = Vertex(weight=randint(min_w, max_w))
+            vert = Vertex(weight=randint(min_w, max_w))
+            self.vertexes.append(vert)
+        for i in range(quantity):
             # добавление к вершинам рёбер
             if i == 0:
-                v.create_neighbors([1])
-            elif i == quantity-1:
-                v.create_neighbors([quantity-2])
+                if len(self.vertexes)==1:
+                    neigh = []
+                else:
+                    neigh = [self.vertexes[1]]
+            elif i == quantity - 1:
+                neigh = [self.vertexes[quantity - 2]]
             else:
-                v.create_neighbors([i-1, i+1])
-            self.vertexes.append(v)
+                neigh = [self.vertexes[i - 1], self.vertexes[i + 1]]
+            self.vertexes[i].create_neighbors(neigh)
 
         self.generate_edges()
 
@@ -50,7 +55,7 @@ class World():
         """
         self.edges = []
         for i in self.vertexes:
-            neigh = i.get_neighbors()
+            neigh = [vert.get_number() for vert in i.get_neighbors()]
             for j in neigh:
                 edge = [i.get_number(), j]
                 edge.sort()
@@ -61,10 +66,46 @@ class World():
         if self.vertexes == list():
             return -1
         self.country_list = list()
-        self.country_list.append(Country([self.vertexes[0]], color=(255,0,0,1)))
+        self.country_list.append(Country([self.vertexes[0]], color=(1,0,0,1)))
         for vert in self.vertexes[1:]:
             self.country_list.append(Country([vert],
-                                             color=(randint(0,255), randint(0,255), randint(0,255), 0.5)))
+                                             color=(random(), random(), random(), 1)))
+        for country in self.country_list:
+            country.create_neighbors()
+
+    def conquest(self, winner, loser):
+        """
+        Добавляю вершины в первого, обновляю первого, удаляю второго
+        :param winner:
+        :param loser:
+        :return:
+        """
+        winner.vertexes.extend(loser.vertexes)
+        loser.zeroize()
+        new_country_list = list()
+        for country in self.country_list:
+            if country != loser:
+                new_country_list.append(country)
+
+        self.country_list = new_country_list
+        for country in self.country_list:
+            country.create_neighbor_vertexes()
+            country.create_neighbors()
+
+
+    def search_country_by_number(self, number):
+        for country in self.country_list:
+            if number == country.get_number():
+                your_country = country
+                break
+        return your_country
+
+    def zeroize(self):
+        self.vertexes = list()
+        self.edges = list()
+        self.country_list = list()
+        Vertex.vertex_list = list()
+        Country.countries = list()
 
 class Vertex():
     # список вершин, в котором лежат все оставшиеся
@@ -94,12 +135,10 @@ class Vertex():
     def create_neighbors(self, neighbors):
         self.neighbors = neighbors
 
-
 class Country():
     countries = list()
 
     def __init__(self, vertexes=[], color=(0,0,0)):
-
         if self.countries == []:
             number_counter = 0
         else:
@@ -108,9 +147,11 @@ class Country():
         self.color = color
 
         self.neighbor_countries = list()
+        self.neighbor_vertexes = list()
         self.vertexes = vertexes
-        self.neighbor_vertexes = self.create_neighbor_vertexes()
+
         self.countries.append(self)
+        self.create_neighbor_vertexes()
 
     def create_neighbor_vertexes(self):
         """
@@ -120,7 +161,18 @@ class Country():
         neighbor_vertexes = []
         for i in self.vertexes:
             neighbor_vertexes.extend(i.get_neighbors())
-        return del_dub(neighbor_vertexes)
+        neighbor_vertexes = del_dub(neighbor_vertexes)
+        # без вершин, содержащихся в государстве
+        updated_neighbor_vertexes = []
+        for vert in neighbor_vertexes:
+            flag = 1
+            for country_vert in self.vertexes:
+                if vert == country_vert:
+                    flag = 0
+                    break
+            if flag == 1:
+                updated_neighbor_vertexes.append(vert)
+        self.neighbor_vertexes = updated_neighbor_vertexes
 
     def create_neighbors(self):
         """
@@ -130,21 +182,34 @@ class Country():
         empty_set = set()
         self.neighbor_countries = list()
         for country in self.countries:
-            if set(self.neighbor_vertexes) & set(country.vertexes) != empty_set:
+            set1 = set([i.get_number() for i in self.neighbor_vertexes])
+            set2 = set([i.get_number() for i in country.vertexes])
+            if set1 & set2 != empty_set:
                 country_number = country.get_number()
-                self.neighbor_countries.append(country_number)
+                self.neighbor_countries.append(country)
+        self.neighbor_countries = del_dub(self.neighbor_countries)
 
     def get_number(self):
         return self.number
 
-    def show_neighbors(self):
-        for i in self.neighbor_countries:
-            print(i.get_number())
+    def get_neighbors(self):
+        return self.neighbor_countries
 
+    def get_wealth(self):
+        sum = 0
+        for vertex in self.vertexes:
+            sum += vertex.weight
+        return sum
+
+    def zeroize(self):
+        self.neighbor_countries = list()
+        self.neighbor_vertexes = list()
+        self.vertexes = list()
 
 """my_w = World()
 my_w.generate_vertexes()
 my_w.generate_countries()
 my_w.show_graph()"""
+
 
 
