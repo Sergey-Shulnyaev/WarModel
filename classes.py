@@ -22,10 +22,11 @@ class World():
         # vertexes - вершины, заданные в виде
         self.vertexes = vertexes
         self.edges = edges
+        self.country_list = list()
 
     def show_graph(self):
-        for i in self.vertexes:
-            print(i.get_number(), i.get_neighbors())
+        for i in self.country_list:
+            print(i.get_number(), i.color)
 
     def generate_vertexes(self, quantity=10, min_w=1, max_w=10):
         for i in range(quantity):
@@ -57,7 +58,13 @@ class World():
         self.edges = del_dub(self.edges)
 
     def generate_countries(self):
-        None
+        if self.vertexes == list():
+            return -1
+        self.country_list = list()
+        self.country_list.append(Country([self.vertexes[0]], color=(255,0,0,1)))
+        for vert in self.vertexes[1:]:
+            self.country_list.append(Country([vert],
+                                             color=(randint(0,255), randint(0,255), randint(0,255), 0.5)))
 
 class Vertex():
     # список вершин, в котором лежат все оставшиеся
@@ -89,10 +96,21 @@ class Vertex():
 
 
 class Country():
+    countries = list()
 
-    def __init__(self, vertexes=[]):
+    def __init__(self, vertexes=[], color=(0,0,0)):
+
+        if self.countries == []:
+            number_counter = 0
+        else:
+            number_counter = self.countries[-1].number + 1
+        self.number = number_counter
+        self.color = color
+
+        self.neighbor_countries = list()
         self.vertexes = vertexes
         self.neighbor_vertexes = self.create_neighbor_vertexes()
+        self.countries.append(self)
 
     def create_neighbor_vertexes(self):
         """
@@ -101,7 +119,7 @@ class Country():
         """
         neighbor_vertexes = []
         for i in self.vertexes:
-            neighbor_vertexes.extend(i.get_neighbors)
+            neighbor_vertexes.extend(i.get_neighbors())
         return del_dub(neighbor_vertexes)
 
     def create_neighbors(self):
@@ -109,6 +127,24 @@ class Country():
         Будет возвращать список текущий соседей(государств), для данного
         :return:
         """
-        None
+        empty_set = set()
+        self.neighbor_countries = list()
+        for country in self.countries:
+            if set(self.neighbor_vertexes) & set(country.vertexes) != empty_set:
+                country_number = country.get_number()
+                self.neighbor_countries.append(country_number)
+
+    def get_number(self):
+        return self.number
+
+    def show_neighbors(self):
+        for i in self.neighbor_countries:
+            print(i.get_number())
+
+
+"""my_w = World()
+my_w.generate_vertexes()
+my_w.generate_countries()
+my_w.show_graph()"""
 
 

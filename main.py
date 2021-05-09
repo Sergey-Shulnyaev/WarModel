@@ -13,7 +13,7 @@ from kivy.uix.screenmanager import ScreenManager, Screen, WipeTransition
 from kivy.core.window import Window
 from kivy.uix.image import Image
 from kivy.uix.treeview import TreeView
-from kivy.graphics import Color, Ellipse
+from kivy.graphics import Color, Ellipse, Bezier, Line
 
 Builder.load_file("base.kv")
 
@@ -28,14 +28,8 @@ class CircleButton(Button):
         super(CircleButton, self).__init__(*args, **kwargs)
         self.size_hint = (None, None)
 
-        self.ellipse_pos_x = 200
-        self.ellipse_pos_y = 200
-        self.ellipse_pos = (self.ellipse_pos_x, self.ellipse_pos_y)
-        self.pos = (self.ellipse_pos_x, self.ellipse_pos_y)
-        self.ellipse_width = 50
-        self.ellipse_height = 50
-        self.ellipse_size = (self.ellipse_width, self.ellipse_height)
-        self.size = (self.ellipse_width, self.ellipse_height)
+        self.pos = (200, 200)
+        self.size = (50, 50)
         self.bind(on_press=self.press_color)
         self.bind(on_release=self.release_color)
 
@@ -43,7 +37,7 @@ class CircleButton(Button):
         self.background_color = (0,0,0,0)
         with self.canvas.before:
             Color(rgb=(0, 0, 0))
-            Ellipse(pos=self.ellipse_pos, size=self.ellipse_size)
+            Ellipse(pos=self.pos, size=self.size)
 
 
 
@@ -51,14 +45,23 @@ class CircleButton(Button):
         self.canvas.before.clear()
         with self.canvas.before:
             Color(rgba=(0, 255, 0, 1))
-            Ellipse(pos=self.ellipse_pos, size=self.ellipse_size)
+            Ellipse(pos=self.pos, size=self.size)
 
     def release_color(self, mes):
         self.canvas.before.clear()
         with self.canvas.before:
             Color(rgba=(0, 0, 0, 1))
-            Ellipse(pos=self.ellipse_pos, size=self.ellipse_size)
+            Ellipse(pos=self.pos, size=self.size)
 
+class Edge(Widget):
+    def __init__(self, points=[], loop=False, *args, **kwargs):
+        super(Edge, self).__init__(*args, **kwargs)
+        self.points = points
+        self.loop = loop
+        with self.canvas.before:
+            Color(1.0, 0.0, 1.0)
+            Line(width=3,
+                 points=self.points)
 
 class MainScreen(Screen):
     def __init__(self, *args, **kwargs):
@@ -180,9 +183,12 @@ class GameScreen(MainScreen):
     """
     def __init__(self, *args, **kwargs):
         super(GameScreen, self).__init__(*args, **kwargs)
-        self.s1 = CircleButton(text="jenkins", color=(0,0,0), font_size=32)
-
+        global my_w
+        self.s1 = CircleButton(text="jenkins", color=(0,0,0), font_size=25)
         self.add_widget(self.s1)
+
+        self.s2 = Edge([100,200,200,200,100,300])
+        self.add_widget(self.s2)
 
 
 class MainApp(App):
@@ -200,7 +206,7 @@ class MainApp(App):
 
 
 if __name__ == '__main__':
-    global mapp
+    global mapp, my_w
     my_w = World()
     my_w.generate_vertexes()
     my_w.show_graph()
