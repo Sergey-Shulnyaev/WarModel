@@ -1,0 +1,18 @@
+<BaseScreen>:
+    Button:
+        text: 'Играть за'
+        size_hint: (.33, .1)
+        pos_hint: {'center_x': 0.165, 'center_y': 0.05}
+        on_press: root.manager.current = 'flight'
+
+    Button:
+        text: 'Авто'
+        size_hint: (.33, .1)
+        pos_hint: {'center_x': 0.495, 'center_y': 0.05}
+        on_press: root.manager.current = 'map'
+
+    Button:
+        text: 'Генерация'
+        size_hint: (.34, .1)
+        pos_hint: {'center_x': 0.83, 'center_y': 0.05}
+        on_press: root.manager.current = 'add'
